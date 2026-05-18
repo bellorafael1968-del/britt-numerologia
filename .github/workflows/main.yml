@@ -1,0 +1,89 @@
+yamlname: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize Bubblewrap project
+        run: |
+          mkdir apk-build && cd apk-build
+          bubblewrap init --manifest https://raw.githubusercontent.com/${{ github.repository }}/main/manifest.json \
+            --directory . \
+            --skipPwaValidation 2>&1 || true
+
+      - name: Patch twa-manifest.json
+        run: |
+          cd apk-build
+          cat twa-manifest.json | \
+          python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          d['packageId']='com.brittobando.numerologia'
+          d['host']='raw.githubusercontent.com'
+          d['startUrl']='/'
+          d['name']='Carta Numerológica Britt Obando'
+          d['launcherName']='Numerología'
+          d['display']='standalone'
+          d['themeColor']='#C9A84C'
+          d['backgroundColor']='#0E0B1A'
+          d['appVersion']='1'
+          d['appVersionCode']=1
+          d['signingKey']={'path':'../keystore.jks','alias':'britt'}
+          print(json.dumps(d,indent=2))
+          " > twa-manifest-new.json
+          mv twa-manifest-new.json twa-manifest.json
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore keystore.jks \
+            -alias britt \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass brittobando123 \
+            -keypass brittobando123 \
+            -dname "CN=Britt Obando, OU=Numerologia, O=BrittObando, L=Unknown, S=Unknown, C=US"
+
+      - name: Build APK
+        run: |
+          cd apk-build
+          bubblewrap build 2>&1
+
+      - name: Find APK
+        run: find . -name "*.apk" 2>/dev/null
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: NumerologiaBritt-APK
+          path: |
+            apk-build/app/build/outputs/apk/**/*.apk
+            apk-build/*.apk
+          if-no-files-found: warn
+Cuando lo hayas pegado, haz clic en el botón verde "Commit changes" arriba a la derecha. El proceso empezará automáticamente y tarda unos 8-10 minutos. Dime cuando lo hayas guardado.
