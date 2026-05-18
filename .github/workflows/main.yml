@@ -1,4 +1,4 @@
-yamlname: Build Android APK
+name: Build Android APK
 
 on:
   push:
@@ -32,31 +32,30 @@ jobs:
       - name: Initialize Bubblewrap project
         run: |
           mkdir apk-build && cd apk-build
-          bubblewrap init --manifest https://raw.githubusercontent.com/${{ github.repository }}/main/manifest.json \
-            --directory . \
-            --skipPwaValidation 2>&1 || true
+          bubblewrap init --manifest https://raw.githubusercontent.com/${{ github.repository }}/main/manifest.json --directory . --skipPwaValidation 2>&1 || true
 
       - name: Patch twa-manifest.json
         run: |
           cd apk-build
-          cat twa-manifest.json | \
-          python3 -c "
-          import json,sys
-          d=json.load(sys.stdin)
-          d['packageId']='com.brittobando.numerologia'
-          d['host']='raw.githubusercontent.com'
-          d['startUrl']='/'
-          d['name']='Carta Numerológica Britt Obando'
-          d['launcherName']='Numerología'
-          d['display']='standalone'
-          d['themeColor']='#C9A84C'
-          d['backgroundColor']='#0E0B1A'
-          d['appVersion']='1'
-          d['appVersionCode']=1
-          d['signingKey']={'path':'../keystore.jks','alias':'britt'}
-          print(json.dumps(d,indent=2))
-          " > twa-manifest-new.json
-          mv twa-manifest-new.json twa-manifest.json
+          python3 << 'PYEOF'
+          import json
+          with open('twa-manifest.json', 'r') as f:
+              d = json.load(f)
+          d['packageId'] = 'com.brittobando.numerologia'
+          d['host'] = 'raw.githubusercontent.com'
+          d['startUrl'] = '/'
+          d['name'] = 'Carta Numerologica Britt Obando'
+          d['launcherName'] = 'Numerologia'
+          d['display'] = 'standalone'
+          d['themeColor'] = '#C9A84C'
+          d['backgroundColor'] = '#0E0B1A'
+          d['appVersion'] = '1'
+          d['appVersionCode'] = 1
+          d['signingKey'] = {'path': '../keystore.jks', 'alias': 'britt'}
+          with open('twa-manifest.json', 'w') as f:
+              json.dump(d, f, indent=2)
+          print('Manifest patched OK')
+          PYEOF
 
       - name: Generate Keystore
         run: |
@@ -86,4 +85,3 @@ jobs:
             apk-build/app/build/outputs/apk/**/*.apk
             apk-build/*.apk
           if-no-files-found: warn
-Cuando lo hayas pegado, haz clic en el botón verde "Commit changes" arriba a la derecha. El proceso empezará automáticamente y tarda unos 8-10 minutos. Dime cuando lo hayas guardado.
