@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Numerología">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Carta Numerológica — Britt Obando</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D5A3;
+    --deep: #0E0B1A;
+    --text: #EDE8F5;
+    --muted: #9B94B8;
+    --card-bg: rgba(42,34,69,0.6);
+    --card-border: rgba(201,168,76,0.2);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 25%, rgba(201,168,76,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 65%, rgba(201,168,76,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 70%, rgba(201,168,76,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 35%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 90%, rgba(201,168,76,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 50%, rgba(255,255,255,0.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 16px 80px;
+  }
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 32px; }
+  .brand { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.28em; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
+  .title { font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 300; line-height: 1.2; margin-bottom: 4px; }
+  .subtitle { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--muted); font-style: italic; }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--gold); font-size: 12px; }
+  .divider::before, .divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+  /* CARD */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 28px 22px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-bottom: 16px;
+  }
+  .card-title { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; margin-bottom: 20px; }
+  /* FORM */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.18em; color: var(--gold-light); text-transform: uppercase; margin-bottom: 5px; }
+  input[type=text], textarea {
+    width: 100%;
+    background: rgba(14,11,26,0.65);
+    border: 1px solid rgba(201,168,76,0.22);
+    border-radius: 9px;
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+    font-size: 16px;
+    padding: 13px 15px;
+    outline: none;
+    transition: border-color 0.25s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type=text]:focus, textarea:focus { border-color: var(--gold); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  textarea { resize: vertical; min-height: 72px; }
+  /* BUTTONS */
+  .btn-primary {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, #7a5b12, #C9A84C, #7a5b12);
+    border: none; border-radius: 10px;
+    color: #0d0a18; font-family: 'Cinzel', serif;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    cursor: pointer; font-weight: 600; margin-top: 4px;
+    transition: opacity 0.25s;
+  }
+  .btn-primary:disabled { opacity: 0.4; }
+  .btn-secondary {
+    width: 100%; padding: 13px;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 10px; color: var(--gold);
+    font-family: 'Cinzel', serif; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; margin-top: 10px;
+    transition: background 0.2s;
+  }
+  .btn-secondary:hover, .btn-secondary:active { background: rgba(201,168,76,0.08); }
+  /* STATUS */
+  .status { text-align: center; padding: 48px 16px; }
+  .spinner {
+    display: inline-block; width: 30px; height: 30px;
+    border: 2px solid rgba(201,168,76,0.15);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-txt { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-style: italic; color: var(--muted); }
+  /* ERROR */
+  .error {
+    background: rgba(180,50,50,0.15);
+    border: 1px solid rgba(200,80,80,0.3);
+    border-radius: 9px; padding: 12px 16px;
+    color: #f0a0a0; font-size: 13px; margin-top: 12px;
+    line-height: 1.5;
+  }
+  /* RESULT */
+  .result-header { text-align: center; margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid rgba(201,168,76,0.18); }
+  .result-name { font-family: 'Cinzel', serif; font-size: 17px; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 6px; }
+  .result-dates { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--muted); font-style: italic; }
+  .sello-box { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.15); border-radius: 10px; padding: 12px; margin: 14px 0; text-align: center; }
+  .sello-num { font-family: 'Cinzel', serif; font-size: 20px; color: var(--gold); letter-spacing: 0.15em; }
+  .sello-lbl { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; margin-top: 3px; }
+  .cita { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--muted); font-style: italic; margin-top: 10px; }
+  /* CONTENT */
+  .carta-content { font-family: 'Cormorant Garamond', serif; font-size: 16px; line-height: 1.85; color: var(--text); }
+  .carta-content h2 {
+    font-family: 'Cinzel', serif; font-size: 10px;
+    letter-spacing: 0.22em; color: var(--gold);
+    text-transform: uppercase; margin: 28px 0 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+  }
+  .carta-content h3 { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 600; color: var(--gold-light); margin: 18px 0 6px; }
+  .carta-content p { margin-bottom: 10px; }
+  .carta-content em { color: var(--gold-light); font-style: italic; }
+  .carta-content strong { font-weight: 600; }
+  .carta-content blockquote {
+    border-left: 2px solid var(--gold); margin: 16px 0;
+    padding: 9px 15px; font-style: italic; color: var(--gold-light);
+    background: rgba(201,168,76,0.05);
+    border-radius: 0 8px 8px 0;
+  }
+  .afirm { display: flex; gap: 8px; margin-bottom: 7px; font-size: 15px; }
+  .afirm-n { color: var(--gold); font-weight: 600; min-width: 18px; }
+  .result-footer { text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(201,168,76,0.15); }
+  .result-footer p { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 0.2em; color: var(--muted); line-height: 1.8; text-transform: uppercase; }
+  /* ACTIONS */
+  .actions { margin-top: 20px; }
+  /* ANIMATION */
+  .fade-in { animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="brand">Britt Obando · @brittobando.tarot</div>
+    <h1 class="title">Carta Numerológica<br>Evolutiva</h1>
+    <div class="divider">✦</div>
+    <div class="subtitle">Tu cédula cósmica · Intransferible</div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div id="formSection">
+    <div class="card">
+      <div class="card-title">Datos del Consultante</div>
+      <div class="field">
+        <label>Nombre Completo</label>
+        <input type="text" id="nombre" placeholder="Nombre y apellidos completos" autocomplete="off" enterkeyhint="next" />
+      </div>
+      <div class="field">
+        <label>Fecha de Nacimiento</label>
+        <input type="text" id="fechaNac" placeholder="Ej: 19 de septiembre de 1991" autocomplete="off" enterkeyhint="next" />
+      </div>
+      <div class="field">
+        <label>Fecha de Emisión (opcional)</label>
+        <input type="text" id="fechaEmision" placeholder="Ej: 18 de mayo de 2026" autocomplete="off" enterkeyhint="next" />
+      </div>
+      <div class="field">
+        <label>Contexto adicional (opcional)</label>
+        <textarea id="contexto" placeholder="Situación especial, preguntas o enfoque del consultante..." enterkeyhint="done"></textarea>
+      </div>
+      <button class="btn-primary" id="generateBtn" onclick="generarCarta()">✦  Generar Carta Numerológica</button>
+      <div id="errorMsg"></div>
+    </div>
+  </div>
+
+  <!-- ESTADO -->
+  <div id="statusSection" style="display:none;">
+    <div class="status">
+      <div class="spinner"></div>
+      <div class="status-txt" id="statusText">Calculando tu mapa numerológico...</div>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="resultSection" style="display:none;">
+    <div class="card fade-in">
+      <div class="result-header">
+        <div class="brand" style="margin-bottom:12px;">Carta Numerológica Evolutiva</div>
+        <div class="result-name" id="displayNombre"></div>
+        <div class="result-dates" id="displayFechas"></div>
+        <div class="sello-box">
+          <div class="sello-num" id="displaySello">· · ·</div>
+          <div class="sello-lbl">Sello Numerológico</div>
+        </div>
+        <div class="cita">«Esta es tu cédula cósmica, tu vínculo único con el universo. Es intransferible.»</div>
+      </div>
+
+      <div class="carta-content" id="cartaContent"></div>
+
+      <div class="result-footer">
+        <p>Carta desarrollada por Britt Obando (@brittobando.tarot)<br>Numeróloga Vanguardista · Tarotista Terapéutica y Evolutiva<br>Carta Numerológica Evolutiva · Uso personal y confidencial</p>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" onclick="exportarPDF()">⬇  Descargar PDF</button>
+        <button class="btn-secondary" onclick="compartir()">↗  Compartir por WhatsApp / Email</button>
+        <button class="btn-secondary" onclick="nuevaCarta()">↩  Nueva carta</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Registrar Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+let cartaData = {}, rawCartaText = '';
+const msgs = [
+  'Calculando tu mapa numerológico...',
+  'Interpretando vocales y consonantes...',
+  'Explorando tus ciclos kármicos...',
+  'Tejiendo tu carta evolutiva...'
+];
+let si = 0, siv;
+
+function tick() { si=(si+1)%msgs.length; document.getElementById('statusText').textContent=msgs[si]; }
+
+function show(id) {
+  ['formSection','statusSection','resultSection'].forEach(s => {
+    document.getElementById(s).style.display = s===id ? 'block' : 'none';
+  });
+  if (id !== 'formSection') window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderHTML(text) {
+  return text.split('\n').map(line => {
+    if (line.startsWith('## ')) return `<h2>${line.slice(3)}</h2>`;
+    if (line.startsWith('### ')) return `<h3>${line.slice(4)}</h3>`;
+    if (line.startsWith('> ')) return `<blockquote>${fmt(line.slice(2))}</blockquote>`;
+    const nm = line.match(/^(\d+)\.\s(.+)/);
+    if (nm) return `<div class="afirm"><span class="afirm-n">${nm[1]}.</span><span>${fmt(nm[2])}</span></div>`;
+    if (!line.trim()) return '<br>';
+    return `<p>${fmt(line)}</p>`;
+  }).join('');
+}
+
+function fmt(t) {
+  return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');
+}
+
+async function generarCarta() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const fechaNac = document.getElementById('fechaNac').value.trim();
+  const now = new Date();
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaEmision = document.getElementById('fechaEmision').value.trim()
+    || `${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+  const contexto = document.getElementById('contexto').value.trim();
+  document.getElementById('errorMsg').innerHTML = '';
+
+  if (!nombre || !fechaNac) {
+    document.getElementById('errorMsg').innerHTML =
+      '<div class="error">Por favor completa el nombre completo y la fecha de nacimiento.</div>';
+    return;
+  }
+
+  show('statusSection');
+  siv = setInterval(tick, 2400);
+  const anio = now.getFullYear();
+
+  const prompt = `Actúa como Britt Obando, Master en Numerología Vanguardista, Tarotista Terapéutica y Evolutiva. Realiza una carta numerológica profunda y evolutiva.
+
+DATOS DEL CONSULTANTE:
+- Nombre completo: ${nombre}
+- Fecha de nacimiento: ${fechaNac}
+- Fecha de emisión: ${fechaEmision}
+${contexto ? `- Contexto: ${contexto}` : ''}
+
+Calcula internamente sin mostrar los cálculos:
+1. Número de Expresión/Esencia (todas las letras, sistema pitagórico)
+2. Número de Alma/Motivación (solo vocales: A=1,E=5,I=9,O=6,U=3)
+3. Número de Personalidad (solo consonantes)
+4. Número de Camino de Vida (dígitos de la fecha de nacimiento)
+5. Desafíos kármicos (4 desafíos)
+6. Año Personal ${anio} y ${anio+1}
+7. Números maestros presentes (11, 22, 33)
+
+Primera línea de tu respuesta únicamente:
+SELLO: [Expresión] · [Alma] · [Personalidad]
+
+Luego la carta completa con estas secciones usando ## para cada título:
+## Esencia
+## Personalidad
+## Tips de Personalidad
+## Misión de Vida
+## Vidas Pasadas
+## Desafíos Kármicos
+## Desafíos de Personalidad
+## Números Maestros
+## Números de Poder
+## Puentes Iniciáticos
+## Ciclo Anual ${anio}
+## Ciclo Anual ${anio+1}
+## Afirmaciones Evolutivas
+## Acto Psicomágico
+
+REGLAS: Sin cálculos en el texto. Lenguaje poético, profundo, no técnico. Voz de Britt Obando, tuteo directo. Afirmaciones numeradas 1-8. Acto psicomágico concreto y simbólico. Carta cálida y transformadora.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    clearInterval(siv);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const raw = data.content.map(b => b.text || '').join('');
+    let sello = '· · ·';
+    const sm = raw.match(/SELLO[:\s]+([0-9]+\s*·\s*[0-9]+\s*·\s*[0-9]+)/i);
+    if (sm) sello = sm[1].trim();
+    const limpio = raw.replace(/^SELLO[^\n]*\n?/im, '').trim();
+    rawCartaText = limpio;
+    cartaData = { nombre, fechaNac, fechaEmision, sello, texto: limpio };
+
+    document.getElementById('displayNombre').textContent = nombre.toUpperCase();
+    document.getElementById('displayFechas').textContent =
+      `Nacimiento · ${fechaNac}  ·  Emisión · ${fechaEmision}`;
+    document.getElementById('displaySello').textContent = sello;
+    document.getElementById('cartaContent').innerHTML = renderHTML(limpio);
+    show('resultSection');
+
+  } catch (err) {
+    clearInterval(siv);
+    show('formSection');
+    document.getElementById('errorMsg').innerHTML =
+      `<div class="error">Error al generar la carta: ${err.message}<br><small>Verifica tu conexión a internet e intenta nuevamente.</small></div>`;
+  }
+}
+
+// ── PDF ──────────────────────────────────────────────────────
+function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W=210, mL=18, mR=18, cW=W-mL-mR;
+  let y=0;
+  const GOLD=[140,100,30], BODY=[55,45,80], LIGHT=[110,100,140], CREAM=[252,250,248];
+
+  function checkPage(n) {
+    if (y+(n||10)>276) { doc.addPage(); y=18; pgFooter(); }
+  }
+  function pgFooter() {
+    doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(...LIGHT);
+    doc.text('CARTA NUMEROLÓGICA EVOLUTIVA  ·  BRITT OBANDO (@brittobando.tarot)  ·  USO PERSONAL Y CONFIDENCIAL', W/2,291,{align:'center'});
+  }
+  function gLine(yy) { doc.setDrawColor(...GOLD); doc.setLineWidth(0.3); doc.line(mL,yy,W-mR,yy); }
+
+  // Cabecera oscura
+  doc.setFillColor(10,8,22); doc.rect(0,0,W,80,'F');
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.6); doc.line(mL,12,W-mR,12);
+
+  y=21; doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
+  doc.text('BRITT OBANDO  ·  @BRITTOBANDO.TAROT', W/2,y,{align:'center'});
+  y+=7; doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(240,232,210);
+  doc.text('CARTA NUMEROLÓGICA EVOLUTIVA', W/2,y,{align:'center'});
+  y+=5; doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...GOLD);
+  doc.text('Tu cédula cósmica  ·  Intransferible', W/2,y,{align:'center'});
+  y+=5; doc.setLineWidth(0.4); doc.line(mL,y,W-mR,y);
+  y+=9; doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(240,232,210);
+  doc.text(cartaData.nombre.toUpperCase(), W/2,y,{align:'center'});
+  y+=6; doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(160,150,190);
+  doc.text(`Nacimiento · ${cartaData.fechaNac}    ·    Emisión · ${cartaData.fechaEmision}`, W/2,y,{align:'center'});
+  y+=8; doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...GOLD);
+  doc.text(cartaData.sello, W/2,y,{align:'center'});
+  y+=4; doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(130,120,160);
+  doc.text('SELLO NUMEROLÓGICO', W/2,y,{align:'center'});
+
+  doc.setFillColor(...CREAM); doc.rect(0,82,W,218,'F');
+  y=88; doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(...BODY);
+  doc.text('«Esta es tu cédula cósmica, tu vínculo único con el universo. Es intransferible.»',W/2,y,{align:'center',maxWidth:cW});
+  y+=7; gLine(y); y+=7;
+
+  cartaData.texto.split('\n').forEach(raw => {
+    const line=raw.trim();
+    if (!line) { y+=2; return; }
+    if (line.startsWith('## ')) {
+      const t=line.replace('##','').trim().toUpperCase(); checkPage(16); y+=3;
+      doc.setFillColor(245,240,228); doc.rect(mL,y-4,cW,10,'F');
+      doc.setDrawColor(...GOLD); doc.setLineWidth(0.6); doc.line(mL,y-4,mL,y+6);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GOLD);
+      doc.text(t,mL+5,y+2); y+=11; return;
+    }
+    if (line.startsWith('### ')) {
+      const t=line.replace('###','').trim(); checkPage(10); y+=2;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...BODY);
+      const w=doc.splitTextToSize(t,cW); doc.text(w,mL,y); y+=w.length*5+2; return;
+    }
+    if (line.startsWith('> ')) {
+      const q=line.replace('> ',''); const w=doc.splitTextToSize(q,cW-10); const h=w.length*5+6;
+      checkPage(h+4); doc.setFillColor(250,246,238); doc.rect(mL,y-2,cW,h,'F');
+      doc.setDrawColor(...GOLD); doc.setLineWidth(1); doc.line(mL,y-2,mL,y-2+h); doc.setLineWidth(0.3);
+      doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(100,78,35);
+      doc.text(w,mL+5,y+2); y+=h+4; return;
+    }
+    const nm=line.match(/^(\d+)\.\s(.+)/);
+    if (nm) {
+      checkPage(8); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...GOLD);
+      doc.text('✦',mL,y); doc.setTextColor(...BODY);
+      const w=doc.splitTextToSize(nm[2].replace(/\*\*/g,'').replace(/\*/g,''),cW-7);
+      doc.text(w,mL+6,y); y+=w.length*5+2; return;
+    }
+    const clean=line.replace(/\*\*/g,'').replace(/\*/g,'');
+    const bold=line.includes('**');
+    if (clean) {
+      checkPage(8); doc.setFont('helvetica',bold?'bold':'normal');
+      doc.setFontSize(9.5); doc.setTextColor(...BODY);
+      const w=doc.splitTextToSize(clean,cW); doc.text(w,mL,y); y+=w.length*5+2;
+    }
+  });
+
+  checkPage(22); y+=6; gLine(y); y+=8;
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...GOLD);
+  doc.text('CARTA NUMEROLÓGICA EVOLUTIVA  ·  USO PERSONAL Y CONFIDENCIAL',W/2,y,{align:'center'});
+  y+=5; doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+  doc.text('Carta desarrollada por Britt Obando (@brittobando.tarot)',W/2,y,{align:'center'});
+  y+=4; doc.text('Numeróloga Vanguardista · Tarotista Terapéutica y Evolutiva',W/2,y,{align:'center'});
+  pgFooter();
+
+  const safe=cartaData.nombre.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g,'').trim().replace(/\s+/g,'_');
+  doc.save(`Carta_Numerologica_${safe}.pdf`);
+}
+
+// ── COMPARTIR ────────────────────────────────────────────────
+function compartir() {
+  const texto=`CARTA NUMEROLÓGICA EVOLUTIVA\n${cartaData.nombre.toUpperCase()}\nNacimiento · ${cartaData.fechaNac} · Emisión · ${cartaData.fechaEmision}\nSello · ${cartaData.sello}\n\n${rawCartaText}\n\n——\nCarta desarrollada por Britt Obando (@brittobando.tarot)`;
+  if (navigator.share) {
+    navigator.share({title:`Carta Numerológica - ${cartaData.nombre}`, text:texto}).catch(()=>copiar(texto));
+  } else { copiar(texto); }
+}
+function copiar(t) {
+  navigator.clipboard.writeText(t).then(()=>alert('¡Carta copiada! Pégala donde necesites.')).catch(()=>alert('Selecciona el texto manualmente para copiarlo.'));
+}
+function nuevaCarta() {
+  ['nombre','fechaNac','fechaEmision','contexto'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('errorMsg').innerHTML='';
+  show('formSection');
+}
+</script>
+</body>
+</html>
