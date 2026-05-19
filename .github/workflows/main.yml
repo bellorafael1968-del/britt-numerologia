@@ -43,11 +43,14 @@ jobs:
 
       - name: Initialize Bubblewrap
         run: |
+          sudo apt-get install -y expect
           mkdir -p apk-build && cd apk-build
-          printf "y\ny\n" | bubblewrap init \
-            --manifest https://whimsical-peony-b84176.netlify.app/manifest.json \
-            --skipPwaValidation \
-            2>&1
+          expect << 'EXPECT'
+          set timeout 300
+          spawn bubblewrap init --manifest https://whimsical-peony-b84176.netlify.app/manifest.json --skipPwaValidation
+          expect "Y/n" { send "y\r"; exp_continue }
+          expect eof
+          EXPECT
           ls -la
 
       - name: Patch twa-manifest
