@@ -26,48 +26,43 @@ jobs:
           keytool -genkey -v \
             -keystore $HOME/keystore.jks \
             -alias britt \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass brittobando123 \
-            -keypass brittobando123 \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass brittobando123 -keypass brittobando123 \
             -dname "CN=Britt Obando, OU=Numerologia, O=BrittObando, L=Unknown, S=Unknown, C=US"
 
-      - name: Create TWA Android Project
+      - name: Create Android Project
         run: |
           mkdir -p twa-app/app/src/main/res/values
           mkdir -p twa-app/app/src/main/res/xml
-          mkdir -p twa-app/app/src/main/java/com/brittobando/numerologia
+          mkdir -p twa-app/app/src/main/res/drawable
+          mkdir -p twa-app/gradle/wrapper
 
-          # settings.gradle
-          cat > twa-app/settings.gradle << 'EOF'
+          python3 << 'PYEOF'
+          import os
+
+          files = {
+            "twa-app/settings.gradle": """
           pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           rootProject.name = "NumerologiaBritt"
           include ':app'
-          EOF
-
-          # build.gradle (root)
-          cat > twa-app/build.gradle << 'EOF'
+          """,
+            "twa-app/build.gradle": """
           plugins {
               id 'com.android.application' version '8.2.0' apply false
           }
-          EOF
-
-          # app/build.gradle
-          cat > twa-app/app/build.gradle << 'EOF'
+          """,
+            "twa-app/gradle.properties": """
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m
+          """,
+            "twa-app/app/build.gradle": """
           plugins {
               id 'com.android.application'
           }
@@ -76,14 +71,14 @@ jobs:
               compileSdk 34
               defaultConfig {
                   applicationId "com.brittobando.numerologia"
-                  minSdk 19
+                  minSdk 21
                   targetSdk 34
                   versionCode 1
                   versionName "1.0"
               }
               signingConfigs {
                   release {
-                      storeFile file(System.getenv("KEYSTORE_PATH") ?: "/home/runner/keystore.jks")
+                      storeFile file("/home/runner/keystore.jks")
                       storePassword "brittobando123"
                       keyAlias "britt"
                       keyPassword "brittobando123"
@@ -103,11 +98,8 @@ jobs:
           dependencies {
               implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
           }
-          EOF
-
-          # AndroidManifest.xml
-          cat > twa-app/app/src/main/AndroidManifest.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
+          """,
+            "twa-app/app/src/main/AndroidManifest.xml": """<?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <application
@@ -118,23 +110,17 @@ jobs:
                   <activity
                       android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
                       android:exported="true">
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                      <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
                           android:value="https://whimsical-peony-b84176.netlify.app" />
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                      <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
                           android:resource="@color/colorPrimary" />
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
+                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
                           android:resource="@drawable/splash" />
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
+                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
                           android:resource="@color/backgroundColor" />
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
+                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
                           android:value="300" />
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
+                      <meta-data android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
                           android:value="com.brittobando.numerologia.fileprovider" />
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -153,88 +139,60 @@ jobs:
                       android:authorities="com.brittobando.numerologia.fileprovider"
                       android:exported="false"
                       android:grantUriPermissions="true">
-                      <meta-data
-                          android:name="android.support.FILE_PROVIDER_PATHS"
+                      <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
                           android:resource="@xml/filepaths" />
                   </provider>
               </application>
-          </manifest>
-          EOF
-
-          # colors.xml
-          cat > twa-app/app/src/main/res/values/colors.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
+          </manifest>""",
+            "twa-app/app/src/main/res/values/colors.xml": """<?xml version="1.0" encoding="utf-8"?>
           <resources>
               <color name="colorPrimary">#C9A84C</color>
               <color name="backgroundColor">#0E0B1A</color>
-          </resources>
-          EOF
-
-          # styles.xml
-          cat > twa-app/app/src/main/res/values/styles.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
+          </resources>""",
+            "twa-app/app/src/main/res/values/styles.xml": """<?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
                   <item name="colorPrimary">@color/colorPrimary</item>
               </style>
-          </resources>
-          EOF
-
-          # filepaths.xml
-          cat > twa-app/app/src/main/res/xml/filepaths.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <paths>
-              <cache-path name="cache" path="." />
-          </paths>
-          EOF
-
-          # splash drawable (simple color)
-          mkdir -p twa-app/app/src/main/res/drawable
-          cat > twa-app/app/src/main/res/drawable/splash.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
+          </resources>""",
+            "twa-app/app/src/main/res/xml/filepaths.xml": """<?xml version="1.0" encoding="utf-8"?>
+          <paths><cache-path name="cache" path="." /></paths>""",
+            "twa-app/app/src/main/res/drawable/splash.xml": """<?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#0E0B1A"/>
-          </shape>
-          EOF
-
-          # gradle wrapper
-          mkdir -p twa-app/gradle/wrapper
-          cat > twa-app/gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
+          </shape>""",
+            "twa-app/gradle/wrapper/gradle-wrapper.properties": """distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+          distributionUrl=https\\://services.gradle.org/distributions/gradle-8.2-bin.zip
           zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
+          zipStorePath=wrapper/dists""",
+          }
 
+          for path, content in files.items():
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              with open(path, 'w') as f:
+                  f.write(content.strip())
+              print(f"Created: {path}")
+          PYEOF
+
+      - name: Setup Gradle Wrapper
+        run: |
           cd twa-app
-          gradle wrapper --gradle-version 8.2 2>/dev/null || true
-          # gradle.properties
-          cat > twa-app/gradle.properties << 'GEOF'
-          android.useAndroidX=true
-          android.enableJetifier=true
-          org.gradle.jvmargs=-Xmx2048m
-          GEOF
-
-          echo "Proyecto creado OK"
+          gradle wrapper --gradle-version 8.2 2>&1 | tail -3
+          chmod +x gradlew
           ls -la
 
       - name: Build APK
         run: |
           cd twa-app
-          chmod +x gradlew
           ./gradlew assembleRelease --stacktrace 2>&1
 
-      - name: Find and rename APK
-        run: |
-          find twa-app -name "*.apk" 2>/dev/null
-          cp twa-app/app/build/outputs/apk/release/app-release.apk NumerologiaBritt.apk 2>/dev/null || true
+      - name: Find APK
+        run: find twa-app -name "*.apk" 2>/dev/null
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: NumerologiaBritt-APK
-          path: |
-            NumerologiaBritt.apk
-            twa-app/app/build/outputs/apk/**/*.apk
+          path: twa-app/app/build/outputs/apk/release/*.apk
           if-no-files-found: warn
