@@ -29,34 +29,6 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize Bubblewrap project
-        run: |
-          mkdir apk-build && cd apk-build
-          bubblewrap init --manifest https://raw.githubusercontent.com/${{ github.repository }}/main/manifest.json --directory . --skipPwaValidation 2>&1 || true
-
-      - name: Patch twa-manifest.json
-        run: |
-          cd apk-build
-          python3 << 'PYEOF'
-          import json
-          with open('twa-manifest.json', 'r') as f:
-              d = json.load(f)
-          d['packageId'] = 'com.brittobando.numerologia'
-          d['host'] = 'raw.githubusercontent.com'
-          d['startUrl'] = '/'
-          d['name'] = 'Carta Numerologica Britt Obando'
-          d['launcherName'] = 'Numerologia'
-          d['display'] = 'standalone'
-          d['themeColor'] = '#C9A84C'
-          d['backgroundColor'] = '#0E0B1A'
-          d['appVersion'] = '1'
-          d['appVersionCode'] = 1
-          d['signingKey'] = {'path': '../keystore.jks', 'alias': 'britt'}
-          with open('twa-manifest.json', 'w') as f:
-              json.dump(d, f, indent=2)
-          print('Manifest patched OK')
-          PYEOF
-
       - name: Generate Keystore
         run: |
           keytool -genkey -v \
@@ -69,13 +41,44 @@ jobs:
             -keypass brittobando123 \
             -dname "CN=Britt Obando, OU=Numerologia, O=BrittObando, L=Unknown, S=Unknown, C=US"
 
+      - name: Initialize Bubblewrap
+        run: |
+          mkdir -p apk-build && cd apk-build
+          bubblewrap init \
+            --manifest https://whimsical-peony-b84176.netlify.app/manifest.json \
+            --skipPwaValidation \
+            2>&1
+          ls -la
+
+      - name: Patch twa-manifest
+        run: |
+          cd apk-build
+          python3 - << 'EOF'
+          import json, os
+          files = os.listdir('.')
+          print("Archivos en apk-build:", files)
+          if 'twa-manifest.json' in files:
+              with open('twa-manifest.json') as f:
+                  d = json.load(f)
+              d['signingKey'] = {'path': '../keystore.jks', 'alias': 'britt'}
+              d['appVersionCode'] = 1
+              with open('twa-manifest.json', 'w') as f:
+                  json.dump(d, f, indent=2)
+              print("Manifest actualizado OK")
+          else:
+              print("ERROR: twa-manifest.json no encontrado")
+              exit(1)
+          EOF
+
       - name: Build APK
         run: |
           cd apk-build
           bubblewrap build 2>&1
 
       - name: Find APK
-        run: find . -name "*.apk" 2>/dev/null
+        run: |
+          find . -name "*.apk" 2>/dev/null
+          find . -name "*.aab" 2>/dev/null
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -83,5 +86,5 @@ jobs:
           name: NumerologiaBritt-APK
           path: |
             apk-build/app/build/outputs/apk/**/*.apk
-            apk-build/*.apk
+            apk-build/app/build/outputs/bundle/**/*.aab
           if-no-files-found: warn
