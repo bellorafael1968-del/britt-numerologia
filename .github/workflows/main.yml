@@ -44,7 +44,7 @@ jobs:
       - name: Initialize Bubblewrap
         run: |
           mkdir -p apk-build && cd apk-build
-          printf "y\n" | bubblewrap init \
+          printf "y\ny\n" | bubblewrap init \
             --manifest https://whimsical-peony-b84176.netlify.app/manifest.json \
             --skipPwaValidation \
             2>&1
