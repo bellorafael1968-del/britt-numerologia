@@ -32,7 +32,7 @@ jobs:
       - name: Generate Keystore
         run: |
           keytool -genkey -v \
-            -keystore keystore.jks \
+            -keystore $HOME/keystore.jks \
             -alias britt \
             -keyalg RSA \
             -keysize 2048 \
@@ -41,45 +41,66 @@ jobs:
             -keypass brittobando123 \
             -dname "CN=Britt Obando, OU=Numerologia, O=BrittObando, L=Unknown, S=Unknown, C=US"
 
-      - name: Initialize Bubblewrap
+      - name: Create project files
         run: |
-          sudo apt-get install -y expect
-          mkdir -p apk-build && cd apk-build
-          expect << 'EXPECT'
-          set timeout 300
-          spawn bubblewrap init --manifest https://whimsical-peony-b84176.netlify.app/manifest.json --skipPwaValidation
-          expect "Y/n" { send "y\r"; exp_continue }
-          expect eof
-          EXPECT
-          ls -la
-
-      - name: Patch twa-manifest
-        run: |
-          cd apk-build
-          python3 - << 'EOF'
-          import json, os
-          files = os.listdir('.')
-          print("Archivos en apk-build:", files)
-          if 'twa-manifest.json' in files:
-              with open('twa-manifest.json') as f:
-                  d = json.load(f)
-              d['signingKey'] = {'path': '../keystore.jks', 'alias': 'britt'}
-              d['appVersionCode'] = 1
-              with open('twa-manifest.json', 'w') as f:
-                  json.dump(d, f, indent=2)
-              print("Manifest actualizado OK")
-          else:
-              print("ERROR: twa-manifest.json no encontrado")
-              exit(1)
+          mkdir -p apk-build
+          cat > apk-build/twa-manifest.json << 'EOF'
+          {
+            "packageId": "com.brittobando.numerologia",
+            "host": "whimsical-peony-b84176.netlify.app",
+            "startUrl": "/",
+            "name": "Carta Numerologica Britt Obando",
+            "launcherName": "Numerologia",
+            "display": "standalone",
+            "orientation": "portrait",
+            "themeColor": "#C9A84C",
+            "navigationColor": "#0E0B1A",
+            "navigationColorDark": "#0E0B1A",
+            "navigationDividerColor": "#C9A84C",
+            "navigationDividerColorDark": "#C9A84C",
+            "backgroundColor": "#0E0B1A",
+            "enableNotifications": false,
+            "iconUrl": "https://whimsical-peony-b84176.netlify.app/icons/icon-512.png",
+            "maskableIconUrl": "https://whimsical-peony-b84176.netlify.app/icons/icon-512.png",
+            "monochromeIconUrl": "https://whimsical-peony-b84176.netlify.app/icons/icon-512.png",
+            "appVersion": "1.0.0",
+            "appVersionCode": 1,
+            "signingKey": {
+              "path": "/home/runner/keystore.jks",
+              "alias": "britt"
+            },
+            "splashScreenFadeOutDuration": 300,
+            "enableSiteSettingsShortcut": true,
+            "isChromeOSOnly": false,
+            "isMetaQuestOnly": false,
+            "fullScopeUrl": "https://whimsical-peony-b84176.netlify.app/",
+            "minSdkVersion": 19,
+            "targetSdkVersion": 34,
+            "additionalTrustedOrigins": [],
+            "retainedBundles": [],
+            "features": {},
+            "alphaDependencies": { "enabled": false },
+            "generatorApp": "bubblewrap-cli",
+            "webManifestUrl": "https://whimsical-peony-b84176.netlify.app/manifest.json",
+            "fallbackType": "customtabs",
+            "shortcuts": []
+          }
           EOF
+          echo "twa-manifest.json creado:"
+          cat apk-build/twa-manifest.json
 
-      - name: Build APK
+      - name: Build APK with Bubblewrap
         run: |
           cd apk-build
-          bubblewrap build 2>&1
+          bubblewrap build \
+            --skipPwaValidation \
+            --signingKeyPath /home/runner/keystore.jks \
+            --signingKeyAlias britt \
+            2>&1
 
       - name: Find APK
         run: |
+          echo "Buscando APKs..."
           find . -name "*.apk" 2>/dev/null
           find . -name "*.aab" 2>/dev/null
 
