@@ -12,11 +12,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -25,9 +20,6 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
-
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
 
       - name: Generate Keystore
         run: |
@@ -41,74 +33,201 @@ jobs:
             -keypass brittobando123 \
             -dname "CN=Britt Obando, OU=Numerologia, O=BrittObando, L=Unknown, S=Unknown, C=US"
 
-      - name: Create project files
+      - name: Create TWA Android Project
         run: |
-          mkdir -p apk-build
-          cat > apk-build/twa-manifest.json << 'EOF'
-          {
-            "packageId": "com.brittobando.numerologia",
-            "host": "whimsical-peony-b84176.netlify.app",
-            "startUrl": "/",
-            "name": "Carta Numerologica Britt Obando",
-            "launcherName": "Numerologia",
-            "display": "standalone",
-            "orientation": "portrait",
-            "themeColor": "#C9A84C",
-            "navigationColor": "#0E0B1A",
-            "navigationColorDark": "#0E0B1A",
-            "navigationDividerColor": "#C9A84C",
-            "navigationDividerColorDark": "#C9A84C",
-            "backgroundColor": "#0E0B1A",
-            "enableNotifications": false,
-            "iconUrl": "https://whimsical-peony-b84176.netlify.app/icons/icon-512.png",
-            "maskableIconUrl": "https://whimsical-peony-b84176.netlify.app/icons/icon-512.png",
-            "monochromeIconUrl": "https://whimsical-peony-b84176.netlify.app/icons/icon-512.png",
-            "appVersion": "1.0.0",
-            "appVersionCode": 1,
-            "signingKey": {
-              "path": "/home/runner/keystore.jks",
-              "alias": "britt"
-            },
-            "splashScreenFadeOutDuration": 300,
-            "enableSiteSettingsShortcut": true,
-            "isChromeOSOnly": false,
-            "isMetaQuestOnly": false,
-            "fullScopeUrl": "https://whimsical-peony-b84176.netlify.app/",
-            "minSdkVersion": 19,
-            "targetSdkVersion": 34,
-            "additionalTrustedOrigins": [],
-            "retainedBundles": [],
-            "features": {},
-            "alphaDependencies": { "enabled": false },
-            "generatorApp": "bubblewrap-cli",
-            "webManifestUrl": "https://whimsical-peony-b84176.netlify.app/manifest.json",
-            "fallbackType": "customtabs",
-            "shortcuts": []
+          mkdir -p twa-app/app/src/main/res/values
+          mkdir -p twa-app/app/src/main/res/xml
+          mkdir -p twa-app/app/src/main/java/com/brittobando/numerologia
+
+          # settings.gradle
+          cat > twa-app/settings.gradle << 'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "NumerologiaBritt"
+          include ':app'
+          EOF
+
+          # build.gradle (root)
+          cat > twa-app/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application' version '8.2.0' apply false
           }
           EOF
-          echo "twa-manifest.json creado:"
-          cat apk-build/twa-manifest.json
 
-      - name: Build APK with Bubblewrap
-        run: |
-          cd apk-build
-          bubblewrap build \
-            --skipPwaValidation \
-            --signingKeyPath /home/runner/keystore.jks \
-            --signingKeyAlias britt \
-            2>&1
+          # app/build.gradle
+          cat > twa-app/app/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.brittobando.numerologia'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.brittobando.numerologia"
+                  minSdk 19
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv("KEYSTORE_PATH") ?: "/home/runner/keystore.jks")
+                      storePassword "brittobando123"
+                      keyAlias "britt"
+                      keyPassword "brittobando123"
+                  }
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.release
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_1_8
+                  targetCompatibility JavaVersion.VERSION_1_8
+              }
+          }
+          dependencies {
+              implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+          }
+          EOF
 
-      - name: Find APK
+          # AndroidManifest.xml
+          cat > twa-app/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="Numerologia"
+                  android:theme="@style/AppTheme"
+                  android:allowBackup="true"
+                  android:supportsRtl="true">
+                  <activity
+                      android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+                      android:exported="true">
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                          android:value="https://whimsical-peony-b84176.netlify.app" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                          android:resource="@color/colorPrimary" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
+                          android:resource="@drawable/splash" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
+                          android:resource="@color/backgroundColor" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
+                          android:value="300" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
+                          android:value="com.brittobando.numerologia.fileprovider" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                          <category android:name="android.intent.category.BROWSABLE"/>
+                          <data android:scheme="https"
+                              android:host="whimsical-peony-b84176.netlify.app"/>
+                      </intent-filter>
+                  </activity>
+                  <provider
+                      android:name="androidx.core.content.FileProvider"
+                      android:authorities="com.brittobando.numerologia.fileprovider"
+                      android:exported="false"
+                      android:grantUriPermissions="true">
+                      <meta-data
+                          android:name="android.support.FILE_PROVIDER_PATHS"
+                          android:resource="@xml/filepaths" />
+                  </provider>
+              </application>
+          </manifest>
+          EOF
+
+          # colors.xml
+          cat > twa-app/app/src/main/res/values/colors.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#C9A84C</color>
+              <color name="backgroundColor">#0E0B1A</color>
+          </resources>
+          EOF
+
+          # styles.xml
+          cat > twa-app/app/src/main/res/values/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+                  <item name="colorPrimary">@color/colorPrimary</item>
+              </style>
+          </resources>
+          EOF
+
+          # filepaths.xml
+          cat > twa-app/app/src/main/res/xml/filepaths.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths>
+              <cache-path name="cache" path="." />
+          </paths>
+          EOF
+
+          # splash drawable (simple color)
+          mkdir -p twa-app/app/src/main/res/drawable
+          cat > twa-app/app/src/main/res/drawable/splash.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#0E0B1A"/>
+          </shape>
+          EOF
+
+          # gradle wrapper
+          mkdir -p twa-app/gradle/wrapper
+          cat > twa-app/gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+          cd twa-app
+          gradle wrapper --gradle-version 8.2 2>/dev/null || true
+          echo "Proyecto creado OK"
+          ls -la
+
+      - name: Build APK
         run: |
-          echo "Buscando APKs..."
-          find . -name "*.apk" 2>/dev/null
-          find . -name "*.aab" 2>/dev/null
+          cd twa-app
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace 2>&1
+
+      - name: Find and rename APK
+        run: |
+          find twa-app -name "*.apk" 2>/dev/null
+          cp twa-app/app/build/outputs/apk/release/app-release.apk NumerologiaBritt.apk 2>/dev/null || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: NumerologiaBritt-APK
           path: |
-            apk-build/app/build/outputs/apk/**/*.apk
-            apk-build/app/build/outputs/bundle/**/*.aab
+            NumerologiaBritt.apk
+            twa-app/app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
