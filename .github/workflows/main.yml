@@ -116,12 +116,7 @@ jobs:
                           android:value="https://whimsical-peony-b84176.netlify.app" />
                       <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
                           android:resource="@color/colorPrimary" />
-                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
-                          android:resource="@drawable/splash" />
-                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
-                          android:resource="@color/backgroundColor" />
-                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
-                          android:value="300" />
+
                       <meta-data android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
                           android:value="com.brittobando.numerologia.fileprovider" />
                       <intent-filter>
@@ -160,9 +155,14 @@ jobs:
             "twa-app/app/src/main/res/xml/filepaths.xml": """<?xml version="1.0" encoding="utf-8"?>
           <paths><cache-path name="cache" path="." /></paths>""",
             "twa-app/app/src/main/res/drawable/splash.xml": """<?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#0E0B1A"/>
-          </shape>""",
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item>
+                  <shape android:shape="rectangle">
+                      <solid android:color="#0E0B1A"/>
+                      <size android:width="300dp" android:height="300dp"/>
+                  </shape>
+              </item>
+          </layer-list>""",
             "twa-app/gradle/wrapper/gradle-wrapper.properties": """distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
           distributionUrl=https\\://services.gradle.org/distributions/gradle-8.2-bin.zip
