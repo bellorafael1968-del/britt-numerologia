@@ -209,6 +209,13 @@ jobs:
 
           cd twa-app
           gradle wrapper --gradle-version 8.2 2>/dev/null || true
+          # gradle.properties
+          cat > twa-app/gradle.properties << 'GEOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m
+          GEOF
+
           echo "Proyecto creado OK"
           ls -la
 
